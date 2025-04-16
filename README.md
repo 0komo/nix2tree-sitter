@@ -17,7 +17,7 @@ See the [API docs](API.md).
 
   <tr>
   <th>Rule definition</th>
-  <th>
+  <td>
 
 ```js
 {
@@ -26,8 +26,8 @@ See the [API docs](API.md).
 }
 ```
 
-  </th>
-  <th>
+  </td>
+  <td>
 
 ```nix
 {
@@ -36,12 +36,12 @@ See the [API docs](API.md).
 } 
 ```
 
-  </th>
+  </td>
   </tr>
 
   <tr>
   <th>Externals</th>
-  <th>
+  <td>
 
 ```js
 {
@@ -60,8 +60,8 @@ See the [API docs](API.md).
 }
 ```
 
-  </th>
-  <th>
+  </td>
+  <td>
 
 ```nix
 {
@@ -80,12 +80,12 @@ See the [API docs](API.md).
 }
 ```
   
-  </th>
+  </td>
   </tr>
 
   <tr>
-  <th>Precedences</th>
-  <th>
+  <td>Precedences</td>
+  <td>
 
 ```js
 $ => prec(1, "foo")
@@ -93,8 +93,8 @@ $ => prec.left("bar")
 $ => prec.right("buzz")
 ```
 
-  </th>
-  <th>
+  </td>
+  <td>
 
 ```nix
 s: prec 1 "foo"
@@ -106,5 +106,6 @@ s: prec.left 0 "bar"
 s: prec.right 0 "buzz"
 ```
 
-  </th>
+  </td>
+  </tr>
 </table>
