@@ -43,6 +43,7 @@ let
 in
 rec {
   _internal = {
+    version = "0.0.1";
     inherit
       throwError
       typeError
