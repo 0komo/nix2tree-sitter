@@ -16,6 +16,13 @@
           "*.nix" = "${nixfmt-rfc-style}/bin/nixfmt";
         };
 
+      devShell = {
+        packages = { nixdoc, nix-unit, ... }: [
+          nixdoc
+          nix-unit
+        ];
+      };
+
       lib = {
         tree-sitter = import ./.;
       };
