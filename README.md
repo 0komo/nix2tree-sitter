@@ -88,9 +88,9 @@ See the [API docs](API.md).
   <td>
 
 ```js
-($) => prec(1, "foo");
-($) => prec.left("bar");
-($) => prec.right("buzz");
+$ => prec(1, "foo")
+$ => prec.left("bar")
+$ => prec.right("buzz")
 ```
 
   </td>
@@ -116,7 +116,8 @@ s: prec.right 0 "buzz"
   <td>
 
 ```js
-($) => alias("foo", $.bar);
+$ => alias("foo", $.bar)
+$ => alias("foo", "bar")
 ```
 
   </td>
@@ -124,6 +125,31 @@ s: prec.right 0 "buzz"
 
 ```nix
 s: alias "foo" (s "bar")
+```
+```nix
+s: alias "foo" "bar"
+```
+
+  </td>
+  </tr>
+
+  <tr>
+  <th>Regex</th>
+  <td>
+
+```js
+$ => /(foo|bar)/
+$ => /(foo|bar)/i
+```
+
+  </td>
+  <td>
+
+```nix
+s: R"(foo|bar)"
+```
+```nix
+s: regexWithFlags "i" "(foo|bar)"
 ```
 
   </td>
