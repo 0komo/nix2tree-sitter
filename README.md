@@ -33,7 +33,7 @@ See the [API docs](API.md).
 {
   foo = s: "foo";
   bar = s: seq [s.foo "bar"];
-} 
+}
 ```
 
   </td>
@@ -79,18 +79,18 @@ See the [API docs](API.md).
   };
 }
 ```
-  
+
   </td>
   </tr>
 
   <tr>
-  <td>Precedences</td>
+  <th>Precedences</th>
   <td>
 
 ```js
-$ => prec(1, "foo")
-$ => prec.left("bar")
-$ => prec.right("buzz")
+($) => prec(1, "foo");
+($) => prec.left("bar");
+($) => prec.right("buzz");
 ```
 
   </td>
@@ -99,11 +99,31 @@ $ => prec.right("buzz")
 ```nix
 s: prec 1 "foo"
 ```
+
 ```nix
 s: prec.left 0 "bar"
 ```
+
 ```nix
 s: prec.right 0 "buzz"
+```
+
+  </td>
+  </tr>
+
+  <tr>
+  <th>Aliasing</th>
+  <td>
+
+```js
+($) => alias("foo", $.bar);
+```
+
+  </td>
+  <td>
+
+```nix
+s: alias "foo" (s "bar")
 ```
 
   </td>

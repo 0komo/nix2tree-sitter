@@ -1,4 +1,3 @@
-
 ## `tree-sitter.alias` {#function-library-tree-sitter.alias}
 
 Alternates a name of rule in the syntax tree.
@@ -348,5 +347,3 @@ grammar {
   };
 }
 ```
-
-

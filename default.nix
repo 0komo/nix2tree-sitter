@@ -2,8 +2,7 @@ let
   inherit (builtins)
     length
     typeOf
-    tryEval
-    trace
+    warn
     foldl'
     listToAttrs
     match
@@ -12,31 +11,25 @@ let
     attrValues
     ;
 
-  traceWarning = msg: v: trace "Warning: ${msg}" v;
-
   throwError = error: msg: throw "${error} -> ${msg}";
   typeError = throwError "TypeError";
 
   typeOfValue = value: if (typeOf value) != "set" || !value ? type then null else value.type;
 
-  tryEvalOrError = v: (tryEval v).success || v;
-  tryEvalListOrError =
-    v: foldl' (x: y: if x == null || x != true && (tryEval y).success then true else x) null v;
 
   normalize =
     value:
     let
       valueType = typeOf value;
     in
+    assert valueType != "null" || typeError "Null value";
     assert valueType == "set" || typeError "Invalid rule: a ${valueType}";
-    if valueType == "null" then
-      typeError "Null value"
-    else if valueType == "string" then
+    if valueType == "string" then
       {
         type = "STRING";
         inherit value;
       }
-    else if (typeOf value.type) == "string" then
+    else if typeOf value.type == "string" then
       value
     else
       null;
@@ -45,13 +38,10 @@ rec {
   _internal = {
     version = "0.0.1";
     inherit
-      throwError
-      typeError
-      typeOfValue
       normalize
       ;
   };
-  
+
   /**
     Alternates a name of rule in the syntax tree.
     If the name is specified with a symbol (as in `alias s.foo (s "bar")`),
@@ -60,13 +50,13 @@ rec {
     the aliased rule appeared as a anonymous node.
 
     # Type
-    
+
     ```
     alias :: Rule -> String or Symbol -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: alias s.foo (s "bar")
     s: alias s.foo "bar"
@@ -75,15 +65,10 @@ rec {
   alias =
     rule: value:
     let
-      rule' = normalize rule;
-    in
-    assert tryEval;
-    let
       result = {
         type = "ALIAS";
-        content = rule';
+        content = normalize rule;
         named = false;
-        value = null;
       };
       valueType = typeOf value;
     in
@@ -96,26 +81,26 @@ rec {
       // {
         value = value;
       }
-    else if (typeOfValue value) == "SYMBOL" then
+    else if typeOfValue value == "SYMBOL" then
       result
       // {
         named = true;
         value = value.name;
       }
     else
-      null;
+      null; # TODO: unreachable, might need some refactor
 
   /**
     A blank/empty rule.
 
     # Type
-    
+
     ```
     blank :: Rule
     ```
 
     # Example
-    
+
     ```nix
     s: choice ["foo" blank]
     # Or, alternatively
@@ -130,13 +115,13 @@ rec {
     Assigns a field to a children of a rule.
 
     # Type
-    
+
     ```
     field :: String -> Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: seq [
       (field "foo" (alias "foo" (s "foo"))
@@ -146,27 +131,23 @@ rec {
   */
   field =
     name: rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "FIELD";
       inherit name;
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Creates a rule that matches one of a set possibilites.
 
     # Type
-    
+
     ```
     choice :: ListOf Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: choice [
       "foo"
@@ -176,26 +157,22 @@ rec {
   */
   choice =
     choices:
-    let
-      choices' = map normalize choices;
-    in
-    assert tryEvalListOrError choices';
     {
       type = "CHOICE";
-      members = choices';
+      members = map normalize choices;
     };
 
   /**
     Creates a rule that matches zero or one occurance of a given rule.
 
     # Type
-    
+
     ```
     optional :: Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: optional "foo"
     ```
@@ -211,13 +188,13 @@ rec {
     Marks a rule with a numerical precedence.
 
     # Type
-    
+
     ```
     prec :: Number -> Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: prec 10 "foo"
     ```
@@ -225,14 +202,10 @@ rec {
   prec = {
     __functor =
       self: number: rule:
-      let
-        rule' = normalize rule;
-      in
-      assert tryEvalOrError rule';
       {
         type = "PREC";
         value = number;
-        content = rule';
+        content = normalize rule;
       };
   };
 
@@ -240,40 +213,36 @@ rec {
     Marks a rule with a numerical precedence that's applied at runtime.
 
     # Type
-    
+
     ```
     prec.dynamic :: Number -> Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: prec.dynamic 10 "foo"
     ```
   */
   prec.dynamic =
     number: rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "PREC_DYNAMIC";
       value = number;
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Marks a rule with a numerical precedence and left-associative.
 
     # Type
-    
+
     ```
     prec.left :: Number -> Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: prec.left 0 "foo" # Default in the JS DSL
     s: prec.left 10 "bar"
@@ -281,27 +250,23 @@ rec {
   */
   prec.left =
     number: rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "PREC_LEFT";
       value = number;
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Marks a rule with a numerical precedence and right-associative.
 
     # Type
-    
+
     ```
     prec.right :: Number -> Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: prec.right 0 "foo" # Default in the JS DSL
     s: prec.right 10 "bar"
@@ -309,79 +274,67 @@ rec {
   */
   prec.right =
     number: rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "PREC_RIGHT";
       value = number;
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Creates a rule that matches zero-or-more occurences of a given rule.
 
     # Type
-    
+
     ```
     repeat :: Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: repeat "foo"
     ```
   */
   repeat =
     rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "REPEAT";
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Creates a rule that matches one-or-more occurences of a given rule.
 
     # Type
-    
+
     ```
     repeat1 :: Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: repeat1 "foo"
     ```
   */
   repeat1 =
     rule:
-    let
-      rule' = normalize rule;
-    in
-    assert tryEvalOrError rule';
     {
       type = "REPEAT1";
-      content = rule';
+      content = normalize rule;
     };
 
   /**
     Creates a rule that matches any number of other rules, one after another.
 
     # Type
-    
+
     ```
     seq :: ListOf Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: seq [
       "foo"
@@ -392,10 +345,6 @@ rec {
   */
   seq =
     seqs:
-    let
-      seqs' = map normalize seqs;
-    in
-    assert tryEvalListOrError seqs';
     {
       type = "SEQ";
       members = map normalize seqs;
@@ -405,13 +354,13 @@ rec {
     Creates a rule that references to a node from the syntax tree.
 
     # Type
-    
+
     ```
     sym :: String -> Symbol
     ```
 
     # Example
-    
+
     ```nix
     s: sym "foo"
     ```
@@ -425,23 +374,19 @@ rec {
     Overrides the global reserved word set with the given wordset.
 
     # Type
-    
+
     ```
     reserved :: String -> Rule -> Rule
     ```
   */
   reserved =
     wordset: rule:
-    let
-      rule' = normalize rule;
-    in
     assert
       (typeOf wordset) == "string"
       || throwError "Error" "Invalid reserved word set name: a ${typeOf wordset}";
-    assert tryEvalOrError rule';
     {
       type = "RESERVED";
-      content = rule';
+      content = rule;
       context_name = wordset;
     };
 
@@ -449,13 +394,13 @@ rec {
     Marks a given rule as producing only a single token.
 
     # Type
-    
+
     ```
     token :: Rule -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: token (choice [
       "foo"
@@ -466,13 +411,9 @@ rec {
   token = {
     __functor =
       self: value:
-      let
-        value' = normalize value;
-      in
-      assert tryEvalOrError value';
       {
         type = "TOKEN";
-        content = value';
+        content = value;
       };
   };
 
@@ -480,33 +421,29 @@ rec {
     Same as `token`, except it doesn't recognize rules in `extras` as valid syntax if there's any.
 
     # Type
-    
+
     ```
     token.immediate :: Rule -> Rule
     ```
   */
   token.immediate =
     value:
-    let
-      value' = normalize value;
-    in
-    assert tryEvalOrError value';
     {
       type = "IMMEDIATE_TOKEN";
-      content = value';
+      content = normalize value;
     };
 
   /**
     Creates a rule that matches a [Rust regex](https://docs.rs/regex/1.1.8/regex/#syntax) pattern.
 
     # Type
-    
+
     ```
     regex :: String -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: regex "(foo|bar)"
     ```
@@ -521,13 +458,13 @@ rec {
     to change the regex behavior.
 
     # Type
-    
+
     ```
     regexWithFlags :: String -> String -> Rule
     ```
 
     # Example
-    
+
     ```nix
     s: regexWithFlags "ix" ''
     (
@@ -551,7 +488,7 @@ rec {
     Alias to `regex`.
 
     # Type
-    
+
     ```
     R :: String -> Rule
     ```
@@ -562,7 +499,7 @@ rec {
     Creates a grammar.
 
     # Type
-    
+
     ```
     grammar :: Grammar -> Set
     Grammar :: {
@@ -580,7 +517,7 @@ rec {
     ```
 
     # Example
-    
+
     ```nix
     grammar {
       name = "foo";
@@ -617,7 +554,8 @@ rec {
             inherit (s) name;
             value = s;
           }) externals'
-        )) // {
+        ))
+        // {
           __functor = self: name: sym name;
         };
 
@@ -672,7 +610,7 @@ rec {
             let
               nthFoundSimiliarSym = foldl' (x: y: if s.name == y.name then x + 1 else x) 0 (attrValues rules);
             in
-            if nthFoundSimiliarSym > 1 then traceWarning "duplicate inline rule `${s.name}'" false else true
+            if nthFoundSimiliarSym > 1 then warn "duplicate inline rule `${s.name}'" false else true
           ) rules
         );
 

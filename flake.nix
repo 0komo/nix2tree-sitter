@@ -7,7 +7,7 @@
   };
 
   outputs =
-    { flakelight, ... }@inputs:
+    { self, flakelight, ... }@inputs:
     flakelight ./. {
       inherit inputs;
 
@@ -17,14 +17,14 @@
         };
 
       devShell = {
-        packages = { nixdoc, nix-unit, ... }: [
-          nixdoc
-          nix-unit
-        ];
+        packages =
+          { nixdoc, nix-unit, ... }:
+          [
+            nixdoc
+            nix-unit
+          ];
       };
 
-      lib = {
-        tree-sitter = import ./.;
-      };
+      lib = import ./.;
     };
 }
