@@ -30,10 +30,10 @@ See the [API docs](API.md).
   <td>
 
 ```nix
-{
-  foo = s: "foo";
-  bar = s: seq [s.foo "bar"];
-}
+[
+  (rule "foo" (s: "foo"));
+  (rule "bar" (s: seq [s.foo "bar"]));
+]
 ```
 
   </td>
@@ -70,13 +70,13 @@ See the [API docs](API.md).
     "string_content"
     "string_end"
   ];
-  rules = {
-    string = s: seq [
+  rules = [
+    (rule "string" (s: seq [
       (field "start" s.string_start)
       (field "content" s.string_content)
       (field "end" s.string_end)
-    ];
-  };
+    ]));
+  ];
 }
 ```
 

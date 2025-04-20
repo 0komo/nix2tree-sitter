@@ -9,6 +9,10 @@ let
     mapAttrs
     filter
     attrValues
+    toJSON
+    replaceStrings
+    tail
+    head
     ;
 
   throwError = error: msg: throw "${error} -> ${msg}";
@@ -23,7 +27,7 @@ let
       valueType = typeOf value;
     in
     assert valueType != "null" || typeError "Null value";
-    assert valueType == "set" || typeError "Invalid rule: a ${valueType}";
+    assert valueType == "set" || valueType == "string" || typeError "Invalid rule: a ${valueType}";
     if valueType == "string" then
       {
         type = "STRING";
@@ -33,6 +37,8 @@ let
       value
     else
       null;
+
+    concatStringsWithSep = a: b: foldl' (x: y: x + a + y) (head b) (tail b);
 in
 rec {
   _internal = {
@@ -496,6 +502,20 @@ rec {
   R = regex;
 
   /**
+    Creates a rule with a name.
+
+    # Type
+   
+    ```
+    rule :: String -> (AttrsOf Symbol -> Rule) -> NamedRule
+    ```
+  */
+  rule = name: r: {
+    inherit name;
+    rule = r;
+  };
+
+  /**
     Creates a grammar.
 
     # Type
@@ -503,16 +523,16 @@ rec {
     ```
     grammar :: Grammar -> Set
     Grammar :: {
-      name :: String
-      rules :: AttrsOf (AttrsOf Symbol -> Rule)
-      conflicts? :: AttrsOf Symbol -> ListOf Symbol
-      inline? :: AttrsOf Symbol -> ListOf Symbol
-      extras? :: AttrsOf Symbol -> ListOf Rule
-      externals? :: ListOf String
-      precedences? :: AttrsOf Symbol -> ListOf (ListOf String)
-      word? :: AttrsOf Symbol -> Symbol
-      supertypes? :: AttrsOs Symbol -> ListOf Symbol
-      reserved? :: AttrsOf (AttrsOf Symbol -> Rule)
+      name :: String;
+      rules :: ListOf NamedRule;
+      conflicts? :: AttrsOf Symbol -> ListOf Symbol;
+      inline? :: AttrsOf Symbol -> ListOf Symbol;
+      extras? :: AttrsOf Symbol -> ListOf Rule;
+      externals? :: ListOf String;
+      precedences? :: AttrsOf Symbol -> ListOf (ListOf String);
+      word? :: AttrsOf Symbol -> Symbol;
+      supertypes? :: AttrsOs Symbol -> ListOf Symbol;
+      reserved? :: AttrsOf (AttrsOf Symbol -> Rule);
     }
     ```
 
@@ -548,7 +568,12 @@ rec {
           typeError "Invalid `externals' value: a ${typeOf externals}";
 
       ruleSet =
-        (mapAttrs (name: value: sym name) rules)
+        (listToAttrs (
+          map (s: {
+            inherit (s) name;
+            value = sym s.name;
+          }) rules
+        ))
         // (listToAttrs (
           map (s: {
             inherit (s) name;
@@ -565,17 +590,12 @@ rec {
         else
           throwError "Error" "`name' must start with any alphabet characters or an underscore and cannot contain a non-word characters";
 
-      rules' = mapAttrs (
-        name: lambda:
-        if (typeOf lambda) != "lambda" then
-          throwError "Error" "Grammar rules must all be lambdas. `${name}' rule is not"
-        else
-          let
-            rule = lambda ruleSet;
-          in
-          if rule == null then throwError "Error" "`${name}' rule returned null" else normalize rule
-      ) rules;
-
+      rules' = "{" + (concatStringsWithSep "," (
+        map (x:
+          assert typeOf x.rule == "lambda" || throwError "Error" "All rules must all be lambdas. `${x.name}' does not";
+          "\"${x.name}\":${toJSON (normalize (x.rule ruleSet))}"
+        ) rules) + "}"
+      );
       reserved' = mapAttrs (
         name: lambda:
         if (typeOf lambda) != "lambda" then
@@ -626,11 +646,11 @@ rec {
         in
         map (l: map normalize l) rules;
     in
-    assert (length (attrValues rules)) != 0 || throwError "Error" "Grammar must at least have one rule";
-    {
+    assert (length rules) != 0 || throwError "Error" "Grammar must at least have one rule";
+    replaceStrings ["\"<rules>\""] [rules'] (toJSON {
       grammar = {
         name = name';
-        rules = rules';
+        rules = "<rules>";
         extras = extras';
         conflicts = conflicts';
         precedences = precedences';
@@ -639,5 +659,5 @@ rec {
         supertypes = supertypes';
         reserved = reserved';
       } // (if word' != null then { word = word'; } else { });
-    };
+    });
 }
