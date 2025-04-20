@@ -31,8 +31,8 @@ See the [API docs](API.md).
 
 ```nix
 [
-  (rule "foo" (s: "foo"));
-  (rule "bar" (s: seq [s.foo "bar"]));
+  (rule "foo" (s: "foo"))
+  (rule "bar" (s: seq [s.foo "bar"]))
 ]
 ```
 
@@ -75,7 +75,7 @@ See the [API docs](API.md).
       (field "start" s.string_start)
       (field "content" s.string_content)
       (field "end" s.string_end)
-    ]));
+    ]))
   ];
 }
 ```
