@@ -2,6 +2,10 @@
 
 Obscure way to generate grammar.json without needing JS(hit) using Nix
 
+## Installation
+
+You can install nix2tree-sitter with any preferred method you want.
+
 ## Usage
 
 See the [API docs](API.md).
