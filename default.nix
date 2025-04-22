@@ -633,7 +633,7 @@ rec {
     in
     assert (length rules) != 0 || throwError "Error" "Grammar must at least have one rule";
     replaceStrings [ "\"<rules>\"" ] [ rules' ] (
-      toJSON {
+      toJSON ({
         name = name';
         rules = "<rules>";
         extras = extras';
@@ -644,6 +644,6 @@ rec {
         supertypes = supertypes';
         reserved = reserved';
       }
-      // (if word' != null then { word = word'; } else { })
+      // (if word' != null then { word = word'; } else { }))
     );
 }
