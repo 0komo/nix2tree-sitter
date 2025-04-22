@@ -16,9 +16,10 @@ grammar {
   name = "math";
   rules = [
     (rule "expression" (s: s._expression))
-    
+
     (rule "_expression" (
-      s: choice [
+      s:
+      choice [
         s.variable
         s.number
         s.sum
@@ -29,9 +30,10 @@ grammar {
         s._parenthesized_expression
       ]
     ))
-    
+
     (rule "sum" (
-      s: PREC.addition (seq [
+      s:
+      PREC.addition (seq [
         (FIELD.left s._expression)
         "+"
         (FIELD.right s._expression)
@@ -39,15 +41,17 @@ grammar {
     ))
 
     (rule "subtraction" (
-      s: PREC.addition (seq [
+      s:
+      PREC.addition (seq [
         (FIELD.left s._expression)
         "-"
         (FIELD.right s._expression)
       ])
     ))
-    
+
     (rule "product" (
-      s: PREC.multiplication (seq [
+      s:
+      PREC.multiplication (seq [
         (FIELD.left s._expression)
         "*"
         (FIELD.right s._expression)
@@ -55,29 +59,32 @@ grammar {
     ))
 
     (rule "division" (
-      s: PREC.multiplication (seq [
+      s:
+      PREC.multiplication (seq [
         (FIELD.left s._expression)
         "/"
         (FIELD.right s._expression)
       ])
     ))
-    
+
     (rule "exponent" (
-      s: PREC.exponent (seq [
+      s:
+      PREC.exponent (seq [
         (field "base" s._expression)
         "**"
         (field "exponent" s._expression)
       ])
     ))
-    
+
     (rule "_parenthesized_expression" (
-      s: seq [
+      s:
+      seq [
         "("
         s._expression
         ")"
       ]
     ))
-    
+
     (rule "number" (s: R ''\d+(\.\d+)?''))
     (rule "variable" (s: R ''([a-zA-Z$][0-9a-zA-Z_]*)''))
   ];

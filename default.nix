@@ -20,7 +20,6 @@ let
 
   typeOfValue = value: if (typeOf value) != "set" || !value ? type then null else value.type;
 
-
   normalize =
     value:
     let
@@ -38,7 +37,7 @@ let
     else
       null;
 
-    concatStringsWithSep = a: b: foldl' (x: y: x + a + y) (head b) (tail b);
+  concatStringsWithSep = a: b: foldl' (x: y: x + a + y) (head b) (tail b);
 in
 rec {
   _internal = {
@@ -135,13 +134,11 @@ rec {
     ]
     ```
   */
-  field =
-    name: rule:
-    {
-      type = "FIELD";
-      inherit name;
-      content = normalize rule;
-    };
+  field = name: rule: {
+    type = "FIELD";
+    inherit name;
+    content = normalize rule;
+  };
 
   /**
     Creates a rule that matches one of a set possibilites.
@@ -161,12 +158,10 @@ rec {
     ]
     ```
   */
-  choice =
-    choices:
-    {
-      type = "CHOICE";
-      members = map normalize choices;
-    };
+  choice = choices: {
+    type = "CHOICE";
+    members = map normalize choices;
+  };
 
   /**
     Creates a rule that matches zero or one occurance of a given rule.
@@ -206,13 +201,11 @@ rec {
     ```
   */
   prec = {
-    __functor =
-      self: number: rule:
-      {
-        type = "PREC";
-        value = number;
-        content = normalize rule;
-      };
+    __functor = self: number: rule: {
+      type = "PREC";
+      value = number;
+      content = normalize rule;
+    };
   };
 
   /**
@@ -230,13 +223,11 @@ rec {
     s: prec.dynamic 10 "foo"
     ```
   */
-  prec.dynamic =
-    number: rule:
-    {
-      type = "PREC_DYNAMIC";
-      value = number;
-      content = normalize rule;
-    };
+  prec.dynamic = number: rule: {
+    type = "PREC_DYNAMIC";
+    value = number;
+    content = normalize rule;
+  };
 
   /**
     Marks a rule with a numerical precedence and left-associative.
@@ -254,13 +245,11 @@ rec {
     s: prec.left 10 "bar"
     ```
   */
-  prec.left =
-    number: rule:
-    {
-      type = "PREC_LEFT";
-      value = number;
-      content = normalize rule;
-    };
+  prec.left = number: rule: {
+    type = "PREC_LEFT";
+    value = number;
+    content = normalize rule;
+  };
 
   /**
     Marks a rule with a numerical precedence and right-associative.
@@ -278,13 +267,11 @@ rec {
     s: prec.right 10 "bar"
     ```
   */
-  prec.right =
-    number: rule:
-    {
-      type = "PREC_RIGHT";
-      value = number;
-      content = normalize rule;
-    };
+  prec.right = number: rule: {
+    type = "PREC_RIGHT";
+    value = number;
+    content = normalize rule;
+  };
 
   /**
     Creates a rule that matches zero-or-more occurences of a given rule.
@@ -301,12 +288,10 @@ rec {
     s: repeat "foo"
     ```
   */
-  repeat =
-    rule:
-    {
-      type = "REPEAT";
-      content = normalize rule;
-    };
+  repeat = rule: {
+    type = "REPEAT";
+    content = normalize rule;
+  };
 
   /**
     Creates a rule that matches one-or-more occurences of a given rule.
@@ -323,12 +308,10 @@ rec {
     s: repeat1 "foo"
     ```
   */
-  repeat1 =
-    rule:
-    {
-      type = "REPEAT1";
-      content = normalize rule;
-    };
+  repeat1 = rule: {
+    type = "REPEAT1";
+    content = normalize rule;
+  };
 
   /**
     Creates a rule that matches any number of other rules, one after another.
@@ -349,12 +332,10 @@ rec {
     ]
     ```
   */
-  seq =
-    seqs:
-    {
-      type = "SEQ";
-      members = map normalize seqs;
-    };
+  seq = seqs: {
+    type = "SEQ";
+    members = map normalize seqs;
+  };
 
   /**
     Creates a rule that references to a node from the syntax tree.
@@ -415,12 +396,10 @@ rec {
     ```
   */
   token = {
-    __functor =
-      self: value:
-      {
-        type = "TOKEN";
-        content = value;
-      };
+    __functor = self: value: {
+      type = "TOKEN";
+      content = value;
+    };
   };
 
   /**
@@ -432,12 +411,10 @@ rec {
     token.immediate :: Rule -> Rule
     ```
   */
-  token.immediate =
-    value:
-    {
-      type = "IMMEDIATE_TOKEN";
-      content = normalize value;
-    };
+  token.immediate = value: {
+    type = "IMMEDIATE_TOKEN";
+    content = normalize value;
+  };
 
   /**
     Creates a rule that matches a [Rust regex](https://docs.rs/regex/1.1.8/regex/#syntax) pattern.
@@ -505,7 +482,7 @@ rec {
     Creates a rule with a name.
 
     # Type
-   
+
     ```
     rule :: String -> (AttrsOf Symbol -> Rule) -> NamedRule
     ```
@@ -590,12 +567,20 @@ rec {
         else
           throwError "Error" "`name' must start with any alphabet characters or an underscore and cannot contain a non-word characters";
 
-      rules' = "{" + (concatStringsWithSep "," (
-        map (x:
-          assert typeOf x.rule == "lambda" || throwError "Error" "All rules must all be lambdas. `${x.name}' does not";
-          "\"${x.name}\":${toJSON (normalize (x.rule ruleSet))}"
-        ) rules) + "}"
-      );
+      rules' =
+        "{"
+        + (
+          concatStringsWithSep "," (
+            map (
+              x:
+              assert
+                typeOf x.rule == "lambda"
+                || throwError "Error" "All rules must all be lambdas. `${x.name}' does not";
+              "\"${x.name}\":${toJSON (normalize (x.rule ruleSet))}"
+            ) rules
+          )
+          + "}"
+        );
       reserved' = mapAttrs (
         name: lambda:
         if (typeOf lambda) != "lambda" then
@@ -647,9 +632,9 @@ rec {
         map (l: map normalize l) rules;
     in
     assert (length rules) != 0 || throwError "Error" "Grammar must at least have one rule";
-    replaceStrings ["\"<rules>\""] [rules'] (toJSON {
-      name = name';
-      grammar = {
+    replaceStrings [ "\"<rules>\"" ] [ rules' ] (
+      toJSON {
+        name = name';
         rules = "<rules>";
         extras = extras';
         conflicts = conflicts';
@@ -658,6 +643,7 @@ rec {
         inline = inline';
         supertypes = supertypes';
         reserved = reserved';
-      } // (if word' != null then { word = word'; } else { });
-    });
+      }
+      // (if word' != null then { word = word'; } else { })
+    );
 }
