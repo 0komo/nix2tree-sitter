@@ -648,8 +648,8 @@ rec {
     in
     assert (length rules) != 0 || throwError "Error" "Grammar must at least have one rule";
     replaceStrings ["\"<rules>\""] [rules'] (toJSON {
+      name = name';
       grammar = {
-        name = name';
         rules = "<rules>";
         extras = extras';
         conflicts = conflicts';
