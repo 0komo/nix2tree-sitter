@@ -8,7 +8,7 @@ let
     match
     mapAttrs
     filter
-    attrValues
+    attrNames
     toJSON
     replaceStrings
     tail
@@ -613,7 +613,7 @@ rec {
           filter (
             s:
             let
-              nthFoundSimiliarSym = foldl' (x: y: if s.name == y.name then x + 1 else x) 0 (attrValues rules);
+              nthFoundSimiliarSym = foldl' (x: y: if s.name == y.name then x + 1 else x) 0 rules;
             in
             if nthFoundSimiliarSym > 1 then warn "duplicate inline rule `${s.name}'" false else true
           ) rules
